@@ -1,0 +1,17 @@
+{
+  "name": "vocab",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "camb-dict": "^1.0.0",
+    "node-fetch": "^2.6.7",
+    "word-definition": "^2.1.6"
+  }
+}
