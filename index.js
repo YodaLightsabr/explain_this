@@ -119,7 +119,7 @@ function explain (subject, context = []) {
             pages = pages.sort((a, b) => b.related - a.related);
             let topResult = pages[0];
             if (pages[0] && pages[1]) {
-                if (pages[0].related < pages[1].related * 1.5) {
+                if (pages[0].related < pages.filter(page => page.title == searchResults[0])[0].related * 1.5) {
                     topResult = pages.filter(page => page.title == searchResults[0])[0];
                 }
             }
