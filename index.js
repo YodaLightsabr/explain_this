@@ -67,7 +67,7 @@ async function explorePage (subject) {
 }
 
 /**
- * 
+ * Explain a subject as a definition or a Wikipedia entry
  * @param {String} subject The subject to find a definition or a Wikipedia page for 
  * @param {String[]} context Context to find the best Wikipedia article for the subject
  * @returns {Promise<ExplainResponse>} Returns an ExplainResponse
@@ -161,6 +161,117 @@ function explain (subject, context = []) {
 }
 
 /**
+ * Generate many explain responses up to a limit
+ * @param {String} subject The subject to find a definition or a Wikipedia page for 
+ * @param {String[]} context Context to find the best Wikipedia article for the subject
+ * @returns {Promise<ExplainResponse>} Returns an ExplainResponse
+ */
+function explainInDetail (subject, limit = 1, context = []) {
+    return new Promise(async (resolve, reject) => {
+        if (limit == 0) return resolve(new ExplainResponse({
+            error: 'Limit must be a number greater than 0',
+            results: []
+        }));
+        let timedOut = false;
+        let returned = false;
+        let timeoutId = 0;
+        const globalResults = [];
+        function addResult (data) {
+            globalResults.push(data);
+            if (globalResults.length >= limit) {
+                resolve(new ExplainResponse({
+                    error: false,
+                    results: globalResults,
+                    input: subject
+                }));
+                returned = true;
+                if (timeoutId) clearTimeout(timeoutId);
+                return true;
+            }
+            else return false;
+        }
+        async function useDetail () {
+            returned = true;
+            if (timeoutId) clearTimeout(timeoutId);
+            const searchRes = await fetch('https://en.wikipedia.org/w/api.php?action=opensearch&limit=3&search=' + encodeURIComponent(subject) + '&profile=fuzzy&format=json', {
+                headers: {
+                    'User-Agent': 'Explain-This/0.0 (https://yodacode.xyz/; yoda@yodacode.xyz) explain-this/0.0'
+                }
+            });
+            const searchJson = await searchRes.json();
+            const searchResults = searchJson[1];
+            let pages = [];
+            for (let i = 0; i < searchResults.length; i++) {
+                const result = searchResults[i];
+                let { blurb, content, title } = await explorePage(result);
+                let sentence = blurb;
+                if (!blurb || !content) {
+                    pages.push({ blurb, sentence, content, title, related: 0 });
+                    continue;
+                }
+                let matches = blurb.match(/(.|\n)*?[A-Za-z0-9][A-Za-z0-9]\. [A-Za-z0-9]/g);
+                let match = matches ? matches[0] : undefined;
+                if (match) sentence = match.substring(0, match.length - 2);
+                else sentence = blurb.substring(0, blurb.indexOf('. '));
+                const lowercaseContent = content.toLowerCase()
+                let related = 0;
+                for (const word of context) {
+                    related += occurrences(lowercaseContent, ` ${word.trim().toLowerCase()} `, false);
+                }
+                related = related / content.length * 100;
+                pages.push({ blurb, content, title, related, sentence });
+                if (globalResults.length + i + 1 >= limit) break;
+            }
+            if (searchResults.length == 0) {
+                if (globalResults.length > 0) return resolve(new ExplainResponse({
+                    error: false,
+                    results: globalResults,
+                    input: subject
+                }));
+                else return resolve(new ExplainResponse({
+                    error: 'Could not identify this subject.',
+                    results: [],
+                    input: subject
+                }));
+            }
+            pages = pages.sort((a, b) => b.related - a.related);
+            let topResult = pages[0];
+            if (pages[0] && pages[1]) {
+                if (pages[0].related < pages.filter(page => page.title == searchResults[0])[0].related * 1.5) {
+                    topResult = pages.filter(page => page.title == searchResults[0])[0];
+                }
+            }
+            if (addResult(pages.map(page => ({
+                type: 'wikipedia',
+                value: page.sentence,
+                expanded: page
+            })))) return;
+            else return resolve(new ExplainResponse({
+                error: false,
+                results: globalResults,
+                input: subject
+            }));
+        }
+        wd.getDef(subject, "en", null, async function(definition) {
+            if (!timedOut) {
+                if (!definition.definition) return await useDetail();
+                if (addResult({
+                    type: 'definition',
+                    value: definition.definition,
+                    expanded: definition
+                })) return;
+                returned = true;
+                await useDetail();
+            }
+        });
+        timeoutId = setTimeout(async () => {
+            timedOut = true;
+            if (!returned) await useDetail();
+        }, 3000);
+    });
+}
+
+/**
  * Takes in a list of words and explains them, using the list as context.
  * @param {String[]} wordList A list of words to explain
  * @param {Function} onEach callback to run after each response
@@ -177,5 +288,6 @@ async function explainManyRelated (wordList, onEach) {
 
 module.exports = {
     explain,
-    explainManyRelated
+    explainManyRelated,
+    explainInDetail
 }
