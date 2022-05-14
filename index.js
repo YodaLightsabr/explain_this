@@ -95,10 +95,10 @@ function explain (subject, context = []) {
                     pages.push({ blurb, sentence, content, title, related: 0 });
                     continue;
                 }
-                let matches = blurb.match(/(.|\n)*?[A-Za-z0-9][A-Za-z0-9]\. [A-Za-z0-9]/g);
+                let matches = blurb.match(/[A-Za-z0-9]{0,20}(.|\n)*?[A-Za-z0-9][A-Za-z0-9]\. [A-Za-z0-9]/g);
                 let match = matches ? matches[0] : undefined;
                 if (match) sentence = match.substring(0, match.length - 2);
-                else sentence = blurb.substring(0, blurb.indexOf('. '));
+                else sentence = blurb.substring(0, blurb.substring(20).indexOf('. '));
                 const lowercaseContent = content.toLowerCase()
                 let related = 0;
                 for (const word of context) {
@@ -215,10 +215,10 @@ function explainInDetail (subject, limit = 1, context = []) {
                     pages.push({ blurb, sentence, content, title, related: 0 });
                     continue;
                 }
-                let matches = blurb.match(/(.|\n)*?[A-Za-z0-9][A-Za-z0-9]\. [A-Za-z0-9]/g);
+                let matches = blurb.match(/[A-Za-z0-9]{0,20}(.|\n)*?[A-Za-z0-9][A-Za-z0-9]\. [A-Za-z0-9]/g);
                 let match = matches ? matches[0] : undefined;
                 if (match) sentence = match.substring(0, match.length - 2);
-                else sentence = blurb.substring(0, blurb.indexOf('. '));
+                else sentence = blurb.substring(0, blurb.substring(20).indexOf('. '));
                 const lowercaseContent = content.toLowerCase()
                 let related = 0;
                 for (const word of context) {
