@@ -241,7 +241,7 @@ function explainInDetail (subject, limit = 1, context = []) {
                     topResult = pages.filter(page => page.title == searchResults[0])[0];
                 }
             }
-            if (addResult(pages.map(page => ({
+            if (addResult(...pages.map(page => ({
                 type: 'wikipedia',
                 value: page.sentence,
                 expanded: page
