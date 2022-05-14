@@ -190,6 +190,12 @@ function explainInDetail (subject, limit = 1, context = []) {
             }
             else return false;
         }
+        function addResults (...results) {
+            for (const result of result) {
+                if (addResult(result)) return true;
+            }
+            return false;
+        }
         async function useDetail () {
             returned = true;
             if (timeoutId) clearTimeout(timeoutId);
@@ -241,7 +247,7 @@ function explainInDetail (subject, limit = 1, context = []) {
                     topResult = pages.filter(page => page.title == searchResults[0])[0];
                 }
             }
-            if (addResult(...pages.map(page => ({
+            if (addResults(...pages.map(page => ({
                 type: 'wikipedia',
                 value: page.sentence,
                 expanded: page
