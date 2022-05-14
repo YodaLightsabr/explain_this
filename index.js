@@ -191,7 +191,7 @@ function explainInDetail (subject, limit = 1, context = []) {
             else return false;
         }
         function addResults (...results) {
-            for (const result of result) {
+            for (const result of results) {
                 if (addResult(result)) return true;
             }
             return false;
